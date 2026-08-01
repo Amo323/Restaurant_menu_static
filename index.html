@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leon's Restaurant</title>
+    <meta name="description" content="Browse the Leon's Restaurant menu and send your order to the kitchen." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+:root {
+  --background: #fbfaf8;
+  --foreground: #312a26;
+  --muted: #806f65;
+  --border: #e9e2dc;
+  --card: #fff;
+  --primary: #eb633b;
+  --primary-dark: #d9502b;
+  --olive: #80944d;
+  --cream: #f6f0eb;
+  --shadow: 0 2px 8px rgba(63, 44, 31, .08);
+  --serif: "Playfair Display", Georgia, serif;
+  --sans: "DM Sans", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; color: var(--foreground); background: var(--background); font-family: var(--sans); }
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+img { display: block; max-width: 100%; }
+
+.site-header { position: sticky; top: 0; z-index: 20; background: rgba(251, 250, 248, .94); border-bottom: 1px solid var(--border); backdrop-filter: blur(14px); }
+.header-inner, .category-scroll, .menu-main { width: min(100% - 32px, 720px); margin: auto; }
+.header-inner { padding: 22px 0 16px; }
+.brand-block h1 { margin: 0; color: var(--primary); font: 700 34px/1 var(--serif); letter-spacing: -.04em; }
+.brand-block p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.header-controls { display: flex; gap: 10px; margin-top: 18px; }
+.search-field { display: flex; align-items: center; gap: 9px; flex: 1; height: 44px; padding: 0 14px; background: var(--card); border: 1px solid var(--border); border-radius: 22px; color: var(--muted); }
+.search-field span { font-size: 25px; line-height: 1; transform: rotate(-20deg); }
+.search-field input { min-width: 0; width: 100%; border: 0; outline: 0; color: var(--foreground); background: transparent; font-size: 14px; }
+.search-field input::placeholder { color: #a5978f; }
+.category-nav { border-top: 1px solid rgba(233, 226, 220, .7); }
+.category-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 9px 0; scrollbar-width: none; }
+.category-scroll::-webkit-scrollbar, .hide-scrollbar::-webkit-scrollbar { display: none; }
+.category-scroll { -ms-overflow-style: none; }
+.category-button { white-space: nowrap; padding: 8px 16px; color: var(--muted); border: 0; border-radius: 20px; background: transparent; }
+.category-button.active { color: #fff; background: var(--foreground); }
+
+.menu-main { padding: 38px 0 120px; }
+.menu-section { scroll-margin-top: 154px; margin-bottom: 48px; }
+.section-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+.section-heading h2 { margin: 0; font: 600 27px/1.15 var(--serif); }
+.section-heading span { height: 1px; flex: 1; background: var(--border); }
+.dish-grid { display: grid; gap: 16px; }
+.dish-card { display: flex; min-height: 148px; gap: 14px; padding: 12px; overflow: hidden; background: var(--card); border: 1px solid var(--border); border-radius: 17px; box-shadow: var(--shadow); transition: transform .18s, border-color .18s; }
+.dish-card:hover, .dish-card:focus-visible { border-color: #e5a08a; outline: 0; transform: translateY(-2px); }
+.dish-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; justify-content: space-between; padding: 2px 0 2px 2px; }
+.dish-copy h3 { margin: 0; font: 700 17px/1.2 var(--serif); }
+.dish-copy p { display: -webkit-box; overflow: hidden; margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.65; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.dish-meta { display: flex; align-items: center; gap: 9px; margin-top: 12px; }
+.dish-meta strong { font-size: 14px; }
+.dish-visual { position: relative; width: 96px; height: 96px; flex: 0 0 96px; align-self: center; }
+.dish-image { width: 100%; height: 100%; border-radius: 13px; object-fit: cover; }
+.image-fallback { display: flex; align-items: center; justify-content: center; color: #b9aaa0; background: var(--cream); font: italic 21px var(--serif); }
+.popular-badge { position: absolute; z-index: 1; top: -1px; right: -2px; padding: 4px 6px; color: #fff; background: var(--primary); border-radius: 0 12px 0 10px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+.add-mark { position: absolute; right: -1px; bottom: -2px; display: grid; width: 29px; height: 29px; place-items: center; color: var(--primary); background: #fff2ed; border-radius: 50%; font-size: 24px; line-height: 1; }
+.empty-state { padding: 76px 20px; text-align: center; }
+.empty-mark { display: grid; width: 60px; height: 60px; margin: auto; place-items: center; color: #b6aaa2; background: var(--cream); border-radius: 50%; font: italic 30px var(--serif); }
+.empty-state h2 { margin: 18px 0 6px; font: 600 24px var(--serif); }
+.empty-state p { margin: 0; color: var(--muted); }
+.text-button { margin-top: 18px; color: var(--primary); border: 0; background: transparent; text-decoration: underline; }
+.floating-cart { position: fixed; right: 18px; bottom: 22px; z-index: 15; display: flex; align-items: center; gap: 12px; height: 54px; padding: 0 18px; color: #fff; background: var(--primary); border: 0; border-radius: 28px; box-shadow: 0 9px 20px rgba(196, 74, 38, .28); font-weight: 700; }
+.floating-cart b { display: grid; width: 24px; height: 24px; place-items: center; color: var(--primary); background: #fff; border-radius: 50%; font-size: 12px; }
+
+.modal-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(37, 27, 21, .38); }
+.cart-drawer, .item-drawer { width: 100%; max-width: 640px; max-height: 92dvh; overflow: hidden; background: var(--background); border: 1px solid var(--border); border-bottom: 0; border-radius: 24px 24px 0 0; box-shadow: 0 -12px 35px rgba(43, 31, 23, .18); }
+.item-drawer { max-height: 92dvh; }
+.drag-handle { width: 42px; height: 5px; margin: 12px auto 5px; background: #dcd4cd; border-radius: 4px; }
+.drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 15px 18px; border-bottom: 1px solid var(--border); }
+.drawer-header h2 { margin: 0; font: 600 27px var(--serif); }
+.orange-mark { color: var(--primary); margin-right: 6px; font-size: 22px; }
+.close-button { width: 34px; height: 34px; color: var(--muted); background: var(--cream); border: 0; border-radius: 50%; font-size: 25px; line-height: 1; }
+.cart-list { max-height: 55dvh; padding: 16px; overflow-y: auto; scrollbar-width: none; }
+.cart-list::-webkit-scrollbar, .drawer-scroll::-webkit-scrollbar { display: none; }
+.cart-list, .drawer-scroll { -ms-overflow-style: none; }
+.cart-row { display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 12px; background: #fff; border: 1px solid var(--border); border-radius: 17px; box-shadow: var(--shadow); }
+.cart-image { width: 60px; height: 60px; flex: 0 0 60px; border-radius: 11px; object-fit: cover; }
+.cart-row-copy { min-width: 0; flex: 1; }
+.cart-row-copy h3 { margin: 0 0 4px; overflow: hidden; font: 600 16px var(--serif); text-overflow: ellipsis; white-space: nowrap; }
+.cart-row-copy strong { color: var(--primary); font-size: 14px; }
+.cart-row-copy p { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+.quantity-control { display: flex; align-items: center; gap: 10px; padding: 3px; background: var(--cream); border: 1px solid var(--border); border-radius: 20px; }
+.quantity-control button { display: grid; width: 28px; height: 28px; place-items: center; color: var(--foreground); background: #fff; border: 1px solid var(--border); border-radius: 50%; font-size: 18px; line-height: 1; }
+.quantity-control span { min-width: 14px; text-align: center; font-size: 14px; }
+.drawer-footer { padding: 16px 18px 22px; border-top: 1px solid var(--border); background: var(--background); }
+.subtotal, .receipt-total { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; font: 20px var(--serif); }
+.subtotal span { color: var(--muted); }
+.primary-button, .secondary-button { width: 100%; min-height: 52px; padding: 12px 18px; border: 0; border-radius: 14px; font-size: 16px; font-weight: 700; }
+.primary-button { color: #fff; background: var(--primary); box-shadow: 0 5px 12px rgba(196, 74, 38, .2); }
+.primary-button:hover { background: var(--primary-dark); }
+.primary-button span { margin-left: 6px; }
+.secondary-button { color: var(--foreground); background: transparent; }
+.item-drawer { overflow: hidden; }
+.drawer-scroll { max-height: calc(92dvh - 18px); overflow-y: auto; }
+.item-hero { height: 220px; padding: 12px 14px 0; }
+.item-hero-image { width: 100%; height: 100%; border-radius: 16px; object-fit: cover; }
+.item-heading { display: flex; gap: 16px; justify-content: space-between; padding: 24px 24px 0; }
+.item-heading h2 { margin: 0; font: 700 25px/1.2 var(--serif); }
+.item-heading p { margin: 9px 0 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+.item-heading > strong { flex: 0 0 auto; color: var(--primary); font: 700 21px var(--serif); }
+.item-options { display: grid; gap: 10px; padding: 30px 24px 8px; }
+.item-options label { font-size: 14px; font-weight: 700; }
+.item-options textarea { width: 100%; min-height: 90px; padding: 14px; resize: vertical; color: var(--foreground); background: var(--cream); border: 1px solid transparent; border-radius: 16px; outline: 0; }
+.item-options textarea:focus { border-color: var(--primary); }
+.quantity-line { display: flex; align-items: center; justify-content: space-between; padding-top: 24px; font-size: 14px; font-weight: 700; }
+.item-actions { display: grid; gap: 4px; padding: 18px 24px 24px; }
+.empty-cart { padding: 70px 20px; color: var(--muted); text-align: center; }
+
+.receipt-page { display: grid; min-height: 100dvh; padding: 40px 16px; place-items: start center; }
+.receipt-card { width: min(100%, 560px); overflow: hidden; background: #fff; border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow); }
+.receipt-intro { padding: 34px 24px; color: var(--foreground); text-align: center; background: #fff1eb; border-bottom: 1px solid var(--border); }
+.receipt-icon { display: grid; width: 60px; height: 60px; margin: 0 auto 14px; place-items: center; color: #fff; background: var(--primary); border-radius: 50%; font-size: 25px; }
+.receipt-intro h1 { margin: 0; font: 700 30px var(--serif); }
+.receipt-intro p { margin: 7px 0 0; color: var(--muted); font-size: 14px; }
+.receipt-body { padding: 24px; }
+.receipt-body h2 { margin: 0; padding-bottom: 15px; border-bottom: 1px solid var(--border); font: 600 19px var(--serif); }
+.receipt-list { padding: 18px 0; }
+.receipt-row { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; font-size: 13px; }
+.receipt-row span { flex: 1; }
+.receipt-row b { margin-right: 5px; }
+.receipt-image { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 9px; object-fit: cover; }
+.receipt-total { padding-top: 16px; border-top: 1px solid var(--border); font-size: 22px; }
+.toast-region { position: fixed; right: 16px; bottom: 16px; z-index: 100; }
+.toast { padding: 12px 16px; color: #fff; background: var(--foreground); border-radius: 12px; box-shadow: var(--shadow); font-size: 13px; animation: toast-in .2s ease-out; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (min-width: 700px) {
+  .header-inner { padding-top: 28px; }
+  .header-controls { flex-direction: row; }
+  .dish-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dish-card { min-height: 150px; }
+  .dish-visual { width: 96px; }
+  .cart-drawer, .item-drawer { margin-bottom: 0; }
+}
+
+@media (max-width: 380px) {
+  .header-inner, .category-scroll, .menu-main { width: min(100% - 24px, 720px); }
+  .dish-card { gap: 8px; }
+  .dish-visual { width: 84px; height: 84px; flex-basis: 84px; }
+  .dish-copy h3 { font-size: 16px; }
+}
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="toast-region" class="toast-region" aria-live="polite"></div>
+    <script>
+const menuCategories = ['Antipasti', 'Primi', 'Secondi', 'Contorni', 'Dolci', 'Bevande'];
+
+const menuItems = [
+  { id: 'm1', name: 'Bruschetta al Pomodoro', description: 'Toasted house sourdough, heirloom tomatoes, fresh basil, garlic, extra virgin olive oil.', price: 9.5, image: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=800&q=80', category: 'Antipasti' },
+  { id: 'm2', name: 'Burrata e Prosciutto', description: 'Fresh Apulian burrata, 24-month Prosciutto di Parma, fig jam, balsamic glaze.', price: 16, image: 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=800&q=80', category: 'Antipasti', popular: true },
+  { id: 'm3', name: 'Calamari Fritti', description: 'Crispy fried calamari rings, lemon wedge, house-made lemon aioli.', price: 14.5, image: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800&q=80', category: 'Antipasti' },
+  { id: 'm4', name: 'Pappardelle al Cinghiale', description: 'Wide ribbon pasta, slow-cooked wild boar ragù, Pecorino Romano, fresh rosemary.', price: 24, image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=800&q=80', category: 'Primi', popular: true },
+  { id: 'm5', name: 'Risotto ai Funghi Porcini', description: 'Carnaroli rice, wild porcini mushrooms, truffle oil, Parmigiano Reggiano.', price: 22, image: 'https://images.unsplash.com/photo-1633964913295-ceb43826e7c9?w=800&q=80', category: 'Primi' },
+  { id: 'm6', name: 'Spaghetti alla Carbonara', description: 'Guanciale, egg yolks, Pecorino Romano, black pepper. No cream.', price: 20, category: 'Primi' },
+  { id: 'm7', name: 'Bistecca alla Fiorentina', description: 'Prime T-bone steak grilled over wood fire, rosemary roasted potatoes, salsa verde. (Serves 2)', price: 65, image: 'https://images.unsplash.com/photo-1546833998-877b37c2e5c4?w=800&q=80', category: 'Secondi' },
+  { id: 'm8', name: 'Branzino al Forno', description: 'Whole roasted Mediterranean sea bass, lemon, capers, cherry tomatoes, white wine sauce.', price: 32, category: 'Secondi', popular: true },
+  { id: 'm9', name: 'Melanzane alla Parmigiana', description: 'Layered baked eggplant, San Marzano tomato sauce, mozzarella, fresh basil.', price: 21, image: 'https://images.unsplash.com/photo-1625938146369-e092144eb7e5?w=800&q=80', category: 'Secondi' },
+  { id: 'm10', name: 'Patate Arrosto', description: 'Crispy roasted fingerling potatoes, garlic, rosemary.', price: 8, category: 'Contorni' },
+  { id: 'm11', name: 'Broccolini Saltati', description: 'Sautéed broccolini, chili flakes, garlic, olive oil.', price: 9, category: 'Contorni' },
+  { id: 'm12', name: 'Tiramisù Classico', description: 'Espresso-soaked ladyfingers, mascarpone cream, dark cocoa powder.', price: 10, image: 'https://images.unsplash.com/photo-1571115177098-24edf7fb6608?w=800&q=80', category: 'Dolci', popular: true },
+  { id: 'm13', name: 'Panna Cotta', description: 'Vanilla bean panna cotta, wild berry compote, mint.', price: 9, category: 'Dolci' },
+  { id: 'm14', name: 'Aperol Spritz', description: 'Aperol, Prosecco, soda water, orange slice.', price: 12, image: 'https://images.unsplash.com/photo-1560512823-829485b8bf24?w=800&q=80', category: 'Bevande' },
+  { id: 'm15', name: 'Negroni Sbagliato', description: 'Campari, sweet vermouth, Prosecco.', price: 13, category: 'Bevande' }
+];
+
+const state = {
+  search: '',
+  category: 'All',
+  cart: loadCart(),
+  view: 'menu',
+  selectedItem: null,
+  selectedQuantity: 1
+};
+
+const app = document.querySelector('#app');
+const toastRegion = document.querySelector('#toast-region');
+
+function loadCart() {
+  try {
+    const savedCart = JSON.parse(localStorage.getItem('la-casa-cart') || '[]');
+    return savedCart.map(({ notes, ...cartItem }) => cartItem);
+  } catch {
+    return [];
+  }
+}
+
+function saveCart() {
+  localStorage.setItem('la-casa-cart', JSON.stringify(state.cart));
+}
+
+function money(value) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[character]));
+}
+
+function getItem(id) {
+  return menuItems.find((item) => item.id === id);
+}
+
+function cartCount() {
+  return state.cart.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+function cartSubtotal() {
+  return state.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+function filteredItems() {
+  const query = state.search.trim().toLowerCase();
+  return menuItems.filter((item) => {
+    const matchesCategory = state.category === 'All' || item.category === state.category;
+    const matchesSearch = !query || `${item.name} ${item.description}`.toLowerCase().includes(query);
+    return matchesCategory && matchesSearch;
+  });
+}
+
+function imageMarkup(item, sizeClass = '') {
+  if (item.image) {
+    return `<img class="${sizeClass}" src="${item.image}" alt="${escapeHtml(item.name)}" loading="lazy">`;
+  }
+  return `<div class="${sizeClass} image-fallback" aria-hidden="true">LC</div>`;
+}
+
+function renderHeader() {
+  return `
+    <header class="site-header">
+      <div class="header-inner">
+        <div class="brand-block">
+          <h1>Leon's Restaurant</h1>
+          <p>Cucina Tradizionale</p>
+        </div>
+        <div class="header-controls">
+          <label class="search-field">
+            <span aria-hidden="true">⌕</span>
+            <input id="search-input" type="search" placeholder="Search menu..." value="${escapeHtml(state.search)}" aria-label="Search menu">
+          </label>
+        </div>
+      </div>
+      <nav class="category-nav" aria-label="Menu categories">
+        <div class="category-scroll">
+          ${['All', ...menuCategories].map((category) => `<button class="category-button ${state.category === category ? 'active' : ''}" data-category="${category}">${category}</button>`).join('')}
+        </div>
+      </nav>
+    </header>
+  `;
+}
+
+function renderMenu() {
+  const items = filteredItems();
+  const grouped = menuCategories.map((category) => ({
+    category,
+    items: items.filter((item) => item.category === category)
+  })).filter((group) => group.items.length);
+
+  return `
+    <main class="menu-main">
+      ${grouped.length ? grouped.map((group) => `
+        <section class="menu-section" id="category-${group.category.toLowerCase()}">
+          <div class="section-heading"><h2>${group.category}</h2><span></span></div>
+          <div class="dish-grid">
+            ${group.items.map((item) => `
+              <article class="dish-card" data-item-id="${item.id}" tabindex="0" role="button" aria-label="View ${escapeHtml(item.name)}">
+                <div class="dish-copy">
+                  <div>
+                    <h3>${escapeHtml(item.name)}</h3>
+                    <p>${escapeHtml(item.description)}</p>
+                  </div>
+                  <div class="dish-meta"><strong>${money(item.price)}</strong></div>
+                </div>
+                <div class="dish-visual">
+                  ${item.popular ? '<span class="popular-badge">★ Popular</span>' : ''}
+                  ${imageMarkup(item, 'dish-image')}
+                  <span class="add-mark">+</span>
+                </div>
+              </article>
+            `).join('')}
+          </div>
+        </section>
+      `).join('') : `
+        <section class="empty-state">
+          <div class="empty-mark">?</div>
+          <h2>No dishes found</h2>
+          <p>Try adjusting your search or filters.</p>
+          <button class="text-button" data-action="clear-filters">Clear all filters</button>
+        </section>
+      `}
+    </main>
+  `;
+}
+
+function renderCartButton() {
+  if (!cartCount()) return '';
+  return `
+    <button class="floating-cart" data-action="open-cart">
+      <span class="bag-mark">▣</span>
+      <span>View Order</span>
+      <b>${cartCount()}</b>
+    </button>
+  `;
+}
+
+function renderMenuView() {
+  app.innerHTML = `${renderHeader()}${renderMenu()}${renderCartButton()}`;
+}
+
+function renderCartDrawer() {
+  const rows = state.cart.map((cartItem) => {
+    const item = getItem(cartItem.menuItemId);
+    const image = cartItem.image || item?.image;
+    return `
+      <article class="cart-row">
+        ${image ? `<img src="${image}" alt="" class="cart-image" loading="lazy">` : '<div class="cart-image image-fallback">LC</div>'}
+        <div class="cart-row-copy">
+          <h3>${escapeHtml(cartItem.name)}</h3>
+          <strong>${money(cartItem.price)}</strong>
+        </div>
+        <div class="quantity-control">
+          <button data-cart-id="${cartItem.id}" data-quantity-change="-1" aria-label="Remove one ${escapeHtml(cartItem.name)}">−</button>
+          <span>${cartItem.quantity}</span>
+          <button data-cart-id="${cartItem.id}" data-quantity-change="1" aria-label="Add one ${escapeHtml(cartItem.name)}">+</button>
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  return `
+    <div class="modal-backdrop" data-action="close-cart">
+      <section class="cart-drawer" role="dialog" aria-modal="true" aria-label="Your order" data-stop-close>
+        <div class="drag-handle"></div>
+        <header class="drawer-header">
+          <h2><span class="orange-mark">▣</span> Your Order</h2>
+          <button class="close-button" data-action="close-cart" aria-label="Close order">×</button>
+        </header>
+        <div class="cart-list">${rows || '<div class="empty-cart"><p>Your order is empty.</p></div>'}</div>
+        ${state.cart.length ? `
+          <footer class="drawer-footer">
+            <div class="subtotal"><span>Subtotal</span><strong>${money(cartSubtotal())}</strong></div>
+            <button class="primary-button" data-action="place-order">Order Now <span>→</span></button>
+          </footer>
+        ` : ''}
+      </section>
+    </div>
+  `;
+}
+
+function renderItemModal() {
+  const item = state.selectedItem;
+  return `
+    <div class="modal-backdrop" data-action="close-item">
+      <section class="item-drawer" role="dialog" aria-modal="true" aria-label="${escapeHtml(item.name)}" data-stop-close>
+        <div class="drawer-scroll">
+          <div class="item-hero">${imageMarkup(item, 'item-hero-image')}</div>
+          <div class="item-heading">
+            <div><h2>${escapeHtml(item.name)}</h2><p>${escapeHtml(item.description)}</p></div>
+            <strong>${money(item.price)}</strong>
+          </div>
+
+          <div class="item-options">
+            <div class="quantity-line"><span>Quantity</span><div class="quantity-control"><button data-action="decrease-selected" aria-label="Decrease quantity">−</button><span>${state.selectedQuantity}</span><button data-action="increase-selected" aria-label="Increase quantity">+</button></div></div>
+          </div>
+          <div class="item-actions">
+            <button class="primary-button" data-action="add-selected">Add to Order • ${money(item.price * state.selectedQuantity)}</button>
+            <button class="secondary-button" data-action="close-item">Cancel</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function renderReceipt() {
+  const rows = state.cart.map((cartItem) => {
+    const item = getItem(cartItem.menuItemId);
+    const image = cartItem.image || item?.image;
+    return `
+      <div class="receipt-row">
+        ${image ? `<img src="${image}" alt="" class="receipt-image">` : '<div class="receipt-image image-fallback">LC</div>'}
+        <span><b>${cartItem.quantity}×</b> ${escapeHtml(cartItem.name)}</span>
+        <strong>${money(cartItem.price * cartItem.quantity)}</strong>
+      </div>
+    `;
+  }).join('');
+  return `
+    <main class="receipt-page">
+      <section class="receipt-card">
+        <div class="receipt-intro"><div class="receipt-icon">▣</div><h1>Your receipt</h1><p>Thank you for dining at La Casa.</p></div>
+        <div class="receipt-body"><h2>Order details</h2><div class="receipt-list">${rows}</div><div class="receipt-total"><span>Total</span><strong>${money(cartSubtotal())}</strong></div><button class="primary-button" data-action="new-order">Start a new order</button></div>
+      </section>
+    </main>
+  `;
+}
+
+function render() {
+  if (state.view === 'receipt') {
+    app.innerHTML = renderReceipt();
+    return;
+  }
+  renderMenuView();
+  if (state.view === 'cart') app.insertAdjacentHTML('beforeend', renderCartDrawer());
+  if (state.view === 'item' && state.selectedItem) app.insertAdjacentHTML('beforeend', renderItemModal());
+}
+
+function showToast(message) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  toastRegion.appendChild(toast);
+  setTimeout(() => toast.remove(), 2200);
+}
+
+function openItem(item) {
+  state.selectedItem = item;
+  state.selectedQuantity = 1;
+  state.view = 'item';
+  render();
+}
+
+function addSelected() {
+  const item = state.selectedItem;
+  const existing = state.cart.find((cartItem) => cartItem.menuItemId === item.id);
+  if (existing) existing.quantity += state.selectedQuantity;
+  else state.cart.push({ id: `${item.id}-${Date.now()}`, menuItemId: item.id, name: item.name, price: item.price, image: item.image, quantity: state.selectedQuantity });
+  saveCart();
+  state.view = 'menu';
+  state.selectedItem = null;
+  render();
+  showToast(`${state.selectedQuantity}× ${item.name} added to your order`);
+}
+
+function updateCartQuantity(id, delta) {
+  const item = state.cart.find((cartItem) => cartItem.id === id);
+  if (!item) return;
+  item.quantity += delta;
+  state.cart = state.cart.filter((cartItem) => cartItem.quantity > 0);
+  saveCart();
+  render();
+}
+
+document.addEventListener('click', (event) => {
+  const target = event.target.closest('[data-action], [data-category], [data-item-id], [data-cart-id]');
+  if (!target) return;
+  if (target.dataset.action === 'close-cart' && !target.closest('[data-stop-close]')) {
+    state.view = 'menu'; render(); return;
+  }
+  if (target.dataset.action === 'close-item' && !target.closest('[data-stop-close]')) {
+    state.view = 'menu'; render(); return;
+  }
+  if (target.dataset.category) {
+    state.category = target.dataset.category;
+    render();
+    if (state.category !== 'All') document.querySelector(`#category-${state.category.toLowerCase()}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (target.dataset.itemId) {
+    openItem(getItem(target.dataset.itemId));
+    return;
+  }
+  const action = target.dataset.action;
+  if (action === 'clear-filters') { state.search = ''; state.category = 'All'; render(); return; }
+  if (action === 'open-cart') { state.view = 'cart'; render(); return; }
+  if (action === 'close-cart') { state.view = 'menu'; render(); return; }
+  if (action === 'close-item') { state.view = 'menu'; render(); return; }
+  if (action === 'increase-selected') { state.selectedQuantity += 1; render(); return; }
+  if (action === 'decrease-selected') { state.selectedQuantity = Math.max(1, state.selectedQuantity - 1); render(); return; }
+  if (action === 'add-selected') { addSelected(); return; }
+  if (action === 'place-order') { state.view = 'receipt'; render(); return; }
+  if (action === 'new-order') { state.cart = []; saveCart(); state.view = 'menu'; render(); return; }
+  if (target.dataset.cartId && target.dataset.quantityChange) updateCartQuantity(target.dataset.cartId, Number(target.dataset.quantityChange));
+});
+
+document.addEventListener('input', (event) => {
+  if (event.target.id === 'search-input') {
+    state.search = event.target.value;
+    render();
+    const input = document.querySelector('#search-input');
+    input?.focus();
+    input?.setSelectionRange(state.search.length, state.search.length);
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && state.view !== 'menu') {
+    state.view = 'menu';
+    render();
+  }
+  if (event.key === 'Enter' && event.target.matches('.dish-card')) openItem(getItem(event.target.dataset.itemId));
+});
+
+render();
+    </script>
+  </body>
+</html>
